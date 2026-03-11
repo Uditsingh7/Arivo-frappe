@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<script>
+    var frappe = frappe || {};
+    frappe.csrf_token = "{{ csrf_token }}";
+</script>
+
+<head>
+    <meta charset="utf-8">
+    <title>Arivo – Collections Board</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f4f5f7;
+            color: #1a1a2e;
+        }
+
+        .arivo-header {
+            background: #fff;
+            border-bottom: 1px solid #e4e7eb;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .arivo-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2563eb;
+            letter-spacing: -0.5px;
+        }
+
+        .arivo-logo span {
+            color: #f59e0b;
+        }
+
+        .arivo-body {
+            padding: 28px 32px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .summary-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e4e7eb;
+        }
+
+        .summary-card .label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .summary-card .value.critical {
+            color: #dc2626;
+        }
+
+        .summary-card .value.high {
+            color: #f59e0b;
+        }
+
+        .summary-card .value.medium {
+            color: #2563eb;
+        }
+
+        .board-card {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #e4e7eb;
+            overflow: hidden;
+        }
+
+        .board-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e4e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .board-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            background: #f9fafb;
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e4e7eb;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        tbody td {
+            padding: 14px 20px;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-critical {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-high {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge-medium {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .badge-low {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .btn-draft {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-draft:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-draft:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 620px;
+            max-width: 95vw;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #111827;
+        }
+
+        .modal-meta {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.8;
+        }
+
+        .modal label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .modal input,
+        .modal textarea {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 14px;
+            font-family: inherit;
+        }
+
+        .modal textarea {
+            height: 180px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .btn-send {
+            background: #16a34a;
+            color: #fff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-send:hover {
+            background: #15803d;
+        }
+
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #111827;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 9999;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .tone-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .tone-Polite {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tone-Firm {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .tone-Final {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="arivo-header">
+        <div class="arivo-logo">Arivo<span>.</span></div>
+        <div style="font-size:13px;color:#6b7280;">AR Collections Copilot</div>
+    </div>
+
+    <div class="arivo-body">
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="label">Total Overdue</div>
+                <div class="value" id="totalOutstanding">Loading...</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Critical (30+ days)</div>
+                <div class="value critical" id="criticalAmount">—</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">High (15–29 days)</div>
+                <div class="value high" id="highAmount">—</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Medium (7–14 days)</div>
+                <div class="value medium" id="mediumAmount">—</div>
+            </div>
+        </div>
+
+        <div class="board-card">
+            <div class="board-header">
+                <h2>Today's Collections Board</h2>
+                <span style="font-size:13px;color:#6b7280;" id="invoiceCount">—</span>
+            </div>
+            <div id="tableContainer">
+                <div class="loading">Loading overdue invoices...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3>AI Drafted Reminder <span id="modalToneTag"></span></h3>
+            <div class="modal-meta" id="modalMeta"></div>
+            abel>Subject</label>
+            <input type="text" id="modalSubject" />
+            abel>Email Body</label>
+            <textarea id="modalBody"></textarea>
+            abel>Send To (Email)</label>
+            <input type="email" id="modalEmail" placeholder="customer@example.com" />
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-send" id="btnSend" onclick="sendReminder()">Send Reminder</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script>
+        // Wait for frappe to be ready
+        window.addEventListener('load', () => {
+            if (typeof frappe !== 'undefined' && frappe.csrf_token) {
+                loadSummary();
+                loadInvoices();
+            }
+        });
+
+        let currentInvoice = null;
+
+        function fmt(amount, currency) {
+            return `${currency} ${Number(amount).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function showToast(msg, success = true) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = success ? '#111827' : '#dc2626';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        function getCsrf() {
+            return document.cookie.split(';')
+                .find(c => c.trim().startsWith('csrf_token='))
+                ?.split('=')[1] || '';
+        }
+
+        async function callApi(method, args = {}) {
+            const res = await fetch(`/api/method/${method}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Frappe-CSRF-Token': frappe.csrf_token
+                },
+                body: JSON.stringify(args)
+            });
+            const data = await res.json();
+            if (data.exc) throw new Error(data.exc);
+            return data.message;
+        }
+
+
+        async function loadSummary() {
+            try {
+                const s = await callApi('arivo.arivo.api.collections.get_ar_summary');
+                document.getElementById('totalOutstanding').textContent = fmt(s.total_outstanding || 0, 'AED');
+                document.getElementById('criticalAmount').textContent = fmt(s.critical_amount || 0, 'AED');
+                document.getElementById('highAmount').textContent = fmt(s.high_amount || 0, 'AED');
+                document.getElementById('mediumAmount').textContent = fmt(s.medium_amount || 0, 'AED');
+            } catch (e) {
+                console.error('Summary error:', e);
+            }
+        }
+
+        async function loadInvoices() {
+            try {
+                const invoices = await callApi('arivo.arivo.api.collections.get_overdue_invoices');
+                document.getElementById('invoiceCount').textContent = `${invoices.length} invoices need attention`;
+
+                if (!invoices.length) {
+                    document.getElementById('tableContainer').innerHTML = '<div class="loading">No overdue invoices. Great job!</div>';
+                    return;
+                }
+
+                const rows = invoices.map(inv => `
+            <tr>
+                <td><strong>${inv.customer_name}</strong></td>
+                <td style="color:#6b7280;font-size:12px;">${inv.invoice}</td>
+                <td>${inv.due_date}</td>
+                <td><strong>${inv.days_overdue} days</strong></td>
+                <td><strong>${fmt(inv.outstanding_amount, inv.currency)}</strong></td>
+                <td><span class="badge badge-${inv.priority.toLowerCase()}">${inv.priority}</span></td>
+                <td style="color:#6b7280;font-size:12px;">${inv.last_reminder ? inv.last_reminder.reminder_type + ' sent' : 'Not contacted'}</td>
+                <td>
+                    <button class="btn-draft" id="btn-${inv.invoice}"
+                        onclick="draftReminder('${inv.invoice}', '${inv.customer_name}', ${inv.outstanding_amount}, '${inv.currency}', ${inv.days_overdue})">
+                        Draft Reminder
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+                document.getElementById('tableContainer').innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Invoice</th>
+                        <th>Due Date</th>
+                        <th>Overdue</th>
+                        <th>Amount</th>
+                        <th>Priority</th>
+                        <th>Last Action</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+            } catch (e) {
+                document.getElementById('tableContainer').innerHTML = '<div class="loading">Error loading invoices.</div>';
+                console.error(e);
+            }
+        }
+
+        async function draftReminder(invoiceName, customerName, amount, currency, daysOverdue) {
+            const btn = document.getElementById(`btn-${invoiceName}`);
+            btn.disabled = true;
+            btn.textContent = 'Drafting...';
+
+            try {
+                const result = await callApi('arivo.arivo.api.ai.draft_reminder', { invoice_name: invoiceName });
+                currentInvoice = invoiceName;
+
+                document.getElementById('modalMeta').innerHTML = `
+            <strong>Customer:</strong> ${result.customer}<br>
+            <strong>Invoice:</strong> ${result.invoice}<br>
+            <strong>Amount:</strong> ${fmt(result.amount, result.currency)}<br>
+            <strong>Days Overdue:</strong> ${result.days_overdue} days
+        `;
+
+                const toneClass = result.tone === 'Final Notice' ? 'tone-Final' : `tone-${result.tone}`;
+                document.getElementById('modalToneTag').innerHTML = `<span class="tone-tag ${toneClass}">${result.tone}</span>`;
+                document.getElementById('modalSubject').value = result.subject;
+                document.getElementById('modalBody').value = result.body;
+                document.getElementById('modalEmail').value = result.customer_email !== 'N/A' ? result.customer_email : '';
+                document.getElementById('modalOverlay').classList.add('active');
+
+            } catch (e) {
+                showToast('Failed to draft reminder. Check API key.', false);
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Draft Reminder';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            currentInvoice = null;
+        }
+
+        async function sendReminder() {
+            const subject = document.getElementById('modalSubject').value;
+            const body = document.getElementById('modalBody').value;
+            const email = document.getElementById('modalEmail').value;
+
+            if (!email) {
+                showToast('Please enter a customer email address', false);
+                return;
+            }
+
+            const btn = document.getElementById('btnSend');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                await callApi('arivo.arivo.api.ai.send_reminder', {
+                    invoice_name: currentInvoice,
+                    subject: subject,
+                    body: body,
+                    customer_email: email
+                });
+                showToast('Reminder sent and logged successfully');
+                closeModal();
+                loadInvoices();
+            } catch (e) {
+                showToast('Failed to send reminder', false);
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Send Reminder';
+            }
+        }
+
+
+    </script>
+</body>
+
+</html>

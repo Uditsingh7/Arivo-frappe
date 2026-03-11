@@ -1,0 +1,38 @@
+{
+  "name": "Collection Settings",
+  "doctype": "DocType",
+  "module": "Arivo",
+  "issingle": 1,
+  "fields": [
+    {
+      "fieldname": "groq_api_key",
+      "fieldtype": "Password",
+      "label": "Groq API Key",
+      "reqd": 1
+    },
+    {
+      "fieldname": "first_reminder_after_days",
+      "fieldtype": "Int",
+      "label": "First Reminder After (Days)",
+      "default": "7"
+    },
+    {
+      "fieldname": "second_reminder_after_days",
+      "fieldtype": "Int",
+      "label": "Second Reminder After (Days)",
+      "default": "15"
+    },
+    {
+      "fieldname": "final_reminder_after_days",
+      "fieldtype": "Int",
+      "label": "Final Reminder After (Days)",
+      "default": "30"
+    },
+    {
+      "fieldname": "minimum_overdue_amount",
+      "fieldtype": "Currency",
+      "label": "Minimum Overdue Amount to Show",
+      "default": "0"
+    }
+  ]
+}

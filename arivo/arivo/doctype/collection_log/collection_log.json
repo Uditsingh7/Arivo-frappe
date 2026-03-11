@@ -1,0 +1,53 @@
+{
+  "name": "Collection Log",
+  "doctype": "DocType",
+  "module": "Arivo",
+  "fields": [
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Customer",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sales_invoice",
+      "fieldtype": "Link",
+      "label": "Sales Invoice",
+      "options": "Sales Invoice",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "reminder_type",
+      "fieldtype": "Select",
+      "label": "Reminder Type",
+      "options": "Polite\nFirm\nFinal Notice",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sent_on",
+      "fieldtype": "Datetime",
+      "label": "Sent On",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "email_subject",
+      "fieldtype": "Data",
+      "label": "Email Subject"
+    },
+    {
+      "fieldname": "email_body",
+      "fieldtype": "Long Text",
+      "label": "Email Body"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Drafted\nSent\nFailed",
+      "in_list_view": 1
+    }
+  ]
+}
