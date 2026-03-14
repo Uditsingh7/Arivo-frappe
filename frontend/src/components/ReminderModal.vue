@@ -65,6 +65,11 @@ function fmt(amount, currency = 'AED') {
 
 function handleSend() {
     if (!form.value.email) return
-    emit('send', { ...form.value })
+    emit('send', {
+        subject: form.value.subject,
+        body: form.value.body,
+        customer_email: form.value.email  
+    })
 }
+
 </script>

@@ -91,46 +91,40 @@ Requirements:
 
 @frappe.whitelist(allow_guest=True)
 def send_reminder(invoice_name, subject, body, customer_email):
-    inv = frappe.db.get_value(
-        "Sales Invoice",
-        invoice_name,
-        ["customer", "customer_name", "outstanding_amount", "currency"],
-        as_dict=True
-    )
+    email_sent = False
+    email_error = None
 
-    if not customer_email or customer_email == "N/A":
-        frappe.throw("No email address found for this customer")
+    try:
+        frappe.sendmail(
+            recipients=[customer_email],
+            subject=subject,
+            message=body.replace('\n', '<br>'),
+            now=True
+        )
+        email_sent = True
+    except Exception as e:
+        email_error = str(e)
+        frappe.log_error(frappe.get_traceback(), "Arivo Send Reminder Email Error")
 
-    frappe.sendmail(
-        recipients=[customer_email],
-        subject=subject,
-        message=body,
-        reference_doctype="Sales Invoice",
-        reference_name=invoice_name
-    )
+    try:
+        customer = frappe.db.get_value("Sales Invoice", invoice_name, "customer")
+        log = frappe.get_doc({
+            "doctype": "Collection Log",
+            "sales_invoice": invoice_name,
+            "customer": customer,
+            "email_subject": subject,
+            "email_body": body,
+            "status": "Sent" if email_sent else "Failed",
+        })
+        log.insert(ignore_permissions=True)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Arivo Reminder Log Error")
 
-    if "FINAL" in subject:
-        tone = "Final Notice"
-    elif "Action Required" in subject:
-        tone = "Firm"
+    if email_sent:
+        return {"status": "sent", "message": f"Reminder sent to {customer_email}"}
     else:
-        tone = "Polite"
-
-    log = frappe.get_doc({
-        "doctype": "Collection Log",
-        "customer": inv.customer,
-        "sales_invoice": invoice_name,
-        "reminder_type": tone,
-        "sent_on": frappe.utils.now(),
-        "email_subject": subject,
-        "email_body": body,
-        "status": "Sent"
-    })
-    log.insert(ignore_permissions=True)
-    frappe.db.commit()
-
-    return {"status": "sent", "message": f"Reminder sent to {customer_email}"}
-
+        return {"status": "logged", "message": f"Email failed ({email_error}) but reminder was logged"}
 
 def load():
     pass

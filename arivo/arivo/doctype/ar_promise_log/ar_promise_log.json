@@ -1,0 +1,15 @@
+{
+  "name": "AR Promise Log",
+  "module": "Arivo",
+  "doctype": "DocType",
+  "is_submittable": 0,
+  "istable": 1,
+  "fields": [
+    {"fieldname": "promise_date", "fieldtype": "Date", "label": "Promise Date", "reqd": 1},
+    {"fieldname": "promise_amount", "fieldtype": "Currency", "label": "Promise Amount"},
+    {"fieldname": "promise_status", "fieldtype": "Select", "label": "Status", "options": "Pending\nKept\nBroken", "default": "Pending"},
+    {"fieldname": "noted_by", "fieldtype": "Link", "label": "Noted By", "options": "User"},
+    {"fieldname": "noted_on", "fieldtype": "Datetime", "label": "Noted On"},
+    {"fieldname": "note", "fieldtype": "Small Text", "label": "Note"}
+  ]
+}
